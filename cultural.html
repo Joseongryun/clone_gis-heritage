@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>문화유산나들이</title>
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+<div class="wrapper">
+    <div id="left__menu">
+        <div id="menu1" onclick="iAmNotReady(event);" class="active"><img src="./img/themeTitle2.png" alt=""></div>
+        <div id="menu2" onclick="iAmNotReady(event);"><img src="./img/goThemeMap_off_01.png" alt=""></div>
+        <div id="menu4" onclick="iAmNotReady(event);"><img src="./img/goThemeMap_off_05.png" alt=""></div>
+        <div id="menu3" onclick="iAmNotReady(event);"><img src="./img/goThemeMap_off_03.png" alt=""></div>
+        <div id="menu6" onclick="iAmNotReady(event);"><img src="./img/goThemeMap_off_06.png" alt=""></div>
+        <div id="menu7" onclick="iAmNotReady(event);"><img src="./img/goThemeMap_off_02.png" alt=""></div>
+        <div id="menu8" onclick="iAmNotReady(event);"><img src="./img/goThemeMap_off_07.png" alt=""></div>
+    </div>
+    <div id="content">
+        <nav id="navigation">
+            <div id="nav__logo">
+            </div>
+            <div id="nav__deco">
+
+            </div>
+            <div id="nav__option">
+                <div id="nav__menu">
+                    <a href="#" onclick="iAmNotReady(event);"><img src="./img/btn_top_01.png" alt=""></a>
+                    <a href="#" onclick="iAmNotReady(event);"><img src="./img/btn_top_03.png" alt=""></a>
+                    <a href="#" onclick="iAmNotReady(event);"><img src="./img/btn_top_06.png" alt=""></a>
+                    <a href="#" onclick="iAmNotReady(event);"><img src="./img/btn_top_07_end.png" alt=""></a>
+                </div>
+                <div id="nav_search"  onclick="iAmNotReady(event);">
+                    <input type="text">
+                    <input type="button">
+                </div>
+            </div>
+        </nav>
+        <div id="search__content">
+            <div id="search__box">
+                <form id="search__input" action="#" onsubmit="return false;search();">
+                    <input type="hidden" name="page" value="1"/>
+                    <input type="hidden" name="type" value="PLACE"/>
+                    <input type="hidden" name="size" value="1000"/>
+                    <input type="hidden" name="request" value="search"/>
+                    <input type="hidden" name="apiKey" value="A8BF0BFE-655F-3BC9-B463-6E2D8ABE3512"/>
+                    <input type="text" id="search" name="query" value="돈화문"/>
+                    <a href="javascript:search()"><img src="./img/bt_search1.gif" alt=""></a>
+                    <input type="submit" style="display: none"></input>
+                </form>
+            </div>
+            <div id="result__box">
+                <div id="title" style="display: none"><img src="./img/tit_result.gif" alt=""></div>
+                <ul id="result__list">
+                    <img id="" src="./img/caution.gif" alt="" style="width: 100%; height: auto;">
+                </ul>
+                <!--<div id="pagenation">-->
+                <!--<span>1</span>-->
+                <!--</div>-->
+            </div>
+        </div>
+        <div id="map__cover">
+            <div id="map__header">
+                <div id="map__header__left">
+                    서울특별시 > 종로구 > 와룡동
+                </div>
+                <div id="map__header__right">
+                    <img onclick="iAmNotReady(event);" id="reload" src="./img/barmenu_off_01.png">
+                    <img onclick="iAmNotReady(event);" id="zoomin" src="./img/barmenu_off_02.png">
+                    <img onclick="iAmNotReady(event);" id="zoomout" src="./img/barmenu_off_03.png">
+                    <img onclick="iAmNotReady(event);" id="distance" src="./img/barmenu_off_05.png">
+                    <img onclick="iAmNotReady(event);" id="area" src="./img/barmenu_off_06.png">
+                </div>
+            </div>
+            <div id="map__content">
+                <div id="wait__div">
+                    <span id="big">지도를 로딩중 입니다.</span><br>
+                    <span id="small">잠시만 기다려 주세요.</span>
+                </div>
+            </div>
+        </div>
+        <div id="footer"></div>
+    </div>
+</div>
+
+<script type="text/javascript"
+        src="http://map.vworld.kr/js/vworldMapInit.js.do?version=2.0&apiKey=A8BF0BFE-655F-3BC9-B463-6E2D8ABE3512"></script>
+<script src="./js/jquery-2.2.3.js"></script>
+<script src="./js/ol.js"></script>
+<script type="text/javascript">
+    var cnt = 0;
+    var features = [];
+    var overlayId = "";
+    var wmts = new ol.layer.Tile({
+        source: new ol.source.XYZ({
+            url: 'http://api.vworld.kr/req/wmts/1.0.0/A8BF0BFE-655F-3BC9-B463-6E2D8ABE3512/Base/{z}/{y}/{x}.png'
+        })
+    });
+    var map = new ol.Map({
+        target: 'map__content',
+        layers: [wmts],
+        view: new ol.View({
+            center: ol.proj.transform([126.9380517322744, 37.16792263658907], 'EPSG:4326', 'EPSG:900913'),
+            zoom: 7
+        })
+    });
+
+    $("#search__input").submit(function (e) {
+        e.preventDefault();
+        search();
+    });
+
+    var search = function () {
+        $("#result__list").html("");
+        $.ajax({
+            type: "get",
+            url: "http://api.vworld.kr/req/search",
+            data: $('#search__input').serialize(),
+            dataType: 'jsonp',
+            async: false,
+            success: function (data) {
+                if (data.response.status === "NOT_FOUND") {
+                    alert("검색결과가 없습니다.");
+                    map.getView().setCenter(ol.proj.transform([126.9380517322744, 37.16792263658907], 'EPSG:4326', 'EPSG:900913'));
+                    map.getView().setZoom(7);
+                    $("#result__list").html('<img src="./img/img_resultno.png" />');
+                    return 0;
+                }
+                let items = data.response.result.items;
+                for (var i in items) {
+                    if (i == 0) {
+                        features = [];
+                    }
+                    if (items[i].category.indexOf("관광지") !== -1 || items[i].category.indexOf("유적지") !== -1) {
+                        if (cnt == 0) {
+                            move(items[i].point.x * 1, items[i].point.y * 1);
+                        }
+                        features[cnt] = new ol.Feature({
+                            geometry: new ol.geom.Point(ol.proj.transform([items[i].point.x * 1, items[i].point.y * 1], 'EPSG:4326', "EPSG:900913")),
+                            id: items[i].id,
+                            title: items[i].title,
+                            parcel: items[i].address.parcel,
+                            road: items[i].address.road,
+                            category: items[i].category,
+                            point: items[i].point
+                        });
+
+                        var iconStyle = new ol.style.Style({
+                            image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
+                                anchor: [0.5, 10],
+                                anchorXUnits: 'fraction',
+                                anchorYUnits: 'pixels',
+                                src: './img/pin_1.png'
+                            }))
+                        });
+                        features[cnt].setStyle(iconStyle);
+                        cnt++;
+                    }
+                }
+                if (features.length == 0) {
+                    alert("검색결과가 없습니다.");
+                    map.getView().setCenter(ol.proj.transform([126.9380517322744, 37.16792263658907], 'EPSG:4326', 'EPSG:900913'));
+                    map.getView().setZoom(7);
+                }
+                var vectorSource = new ol.source.Vector({
+                    features: features
+                });
+
+                var vectorLayer = new ol.layer.Vector({
+                    source: vectorSource
+                });
+
+                vectorLayer.set("vectorLayer", "search_vector");
+
+                map.getLayers().forEach(function (layer) {
+                    if (layer.get("vectorLayer") == "search_vector") {
+                        map.removeLayer(layer);
+                    }
+                });
+
+                map.addLayer(vectorLayer);
+                createLeftListFunc();
+            }, error: function (xhr, stat, err) {
+                console.log(err);
+            }
+        });
+        $("#search").val("");
+        $("#title").show();
+        cnt = 0;
+    };
+
+    var move = function (x, y) {
+        map.getView().setCenter(ol.proj.transform([x, y], 'EPSG:4326', "EPSG:900913"));
+        map.getView().setZoom(19);
+    };
+
+    map.on('click', function (e) {
+        var pixel = e.pixel;
+        deleteOverlayById(overlayId);
+
+        map.forEachFeatureAtPixel(pixel, function (feature, layer) {
+            overlayId = feature.get("id");
+
+            var overlayElement = document.createElement("div");
+            overlayElement.setAttribute("class", "overlay__el");
+            overlayElement.innerHTML = `<div class="overlay__header">
+                                                        ${feature.get("title")}
+                                                        <div class="close__btn" onclick="deleteOverlayById('${feature.get("id")}')">&times;</div>
+                                                    </div>
+                                                    <div class="overlay__img">
+                                                        <img src="./img/1613328.jpg" alt="">
+                                                    </div>
+                                                    <div class="overlay__content">
+                                                        <div class="overlay__road">${feature.get("road")}</div>
+                                                        <div class="overlay__showmore" onclick="showMoreOverlay(event,'${feature.get("title")}')"><img src="./img/bt_detail.gif" alt=""></div>
+                                                    </div>`;
+            var overlayInfo = new ol.Overlay({
+                id: feature.get("id"),
+                element: overlayElement,
+                offset: [0, 30],
+                position: ol.proj.transform([feature.get("point").x * 1,
+                    feature.get("point").y * 1
+                ], 'EPSG:4326', "EPSG:900913")
+            });
+            map.addOverlay(overlayInfo);
+        });
+    });
+
+    var createLeftListFunc = function () {
+        let html = "";
+        features.forEach(function (e) {
+            html += `<li class="result__el" data-x="${e.get("point").x}" data-y="${e.get("point").y}" onclick="clickNameOfCaltural(this, '${e.get("id")}')">
+                        <div class="name">${e.get("title")}</div>
+                        <div class="description">
+                            <div class="des__img">
+                                <img src="./img/1613328.jpg" alt="">
+                            </div>
+                            <div class="des__content">
+                                <p>주소 : ${e.get("road")}</p>
+                            </div>
+                        </div>
+                    </li>`
+        });
+        $("#result__list").html(html)
+    };
+
+    var clickNameOfCaltural = function (el, id) {
+        let x = $(el).data("x");
+        let y = $(el).data("y");
+        move(x, y);
+        deleteOverlayById(overlayId);
+        addOverlayById(id);
+    };
+
+    var addOverlayById = function (id) {
+        let feature;
+        features.forEach(function (e) {
+            if(e.get("id") == id){
+                feature = e;
+            }
+        });
+        overlayId = id;
+        var overlayElement = document.createElement("div");
+        overlayElement.setAttribute("class", "overlay__el");
+        overlayElement.innerHTML = `<div class="overlay__header">
+                                                        ${feature.get("title")}
+                                                        <div class="close__btn" onclick="deleteOverlayById('${feature.get("id")}')">&times;</div>
+                                                    </div>
+                                                    <div class="overlay__img">
+                                                        <img src="./img/1613328.jpg" alt="">
+                                                    </div>
+                                                    <div class="overlay__content">
+                                                        <div class="overlay__road">${feature.get("road")}</div>
+                                                        <div class="overlay__showmore" onclick="showMoreOverlay(event,'${feature.get("title")}')"><img src="./img/bt_detail.gif" alt=""></div>
+                                                    </div>`;
+        var overlayInfo = new ol.Overlay({
+            id: feature.get("id"),
+            element: overlayElement,
+            offset: [0, 30],
+            position: ol.proj.transform([feature.get("point").x * 1,
+                feature.get("point").y * 1
+            ], 'EPSG:4326', "EPSG:900913")
+        });
+        map.addOverlay(overlayInfo);
+    }
+
+    var deleteOverlayById = function (id) {
+        console.log("delete"+id);
+        map.removeOverlay(map.getOverlayById(id));
+    };
+
+    var showMoreOverlay = function (e, title) {
+        e.stopPropagation();
+        window.open(`https://ko.wikipedia.org/wiki/${title}`, "위키백과", "width=800, height=700, toolbar=no, menubar=no, scrollbars=no, resizable=yes");
+    }
+
+    var iAmNotReady = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        alert('서비스 준비중입니다.');
+    }
+</script>
+</body>
+</html>

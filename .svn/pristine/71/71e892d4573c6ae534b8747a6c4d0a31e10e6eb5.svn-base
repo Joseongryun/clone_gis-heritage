@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>문화유산나들이</title>
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+<div class="wrapper">
+    <div id="left__menu">
+        <div id="menu1" class="active"><img src="./img/themeTitle2.png" alt=""></div>
+        <div id="menu2"><img src="./img/goThemeMap_off_01.png" alt=""></div>
+        <div id="menu4"><img src="./img/goThemeMap_off_05.png" alt=""></div>
+        <div id="menu3"><img src="./img/goThemeMap_off_03.png" alt=""></div>
+        <div id="menu6"><img src="./img/goThemeMap_off_06.png" alt=""></div>
+        <div id="menu7"><img src="./img/goThemeMap_off_02.png" alt=""></div>
+        <div id="menu8"><img src="./img/goThemeMap_off_07.png" alt=""></div>
+    </div>
+    <div id="content">
+        <nav id="navigation">
+            <div id="nav__logo">
+            </div>
+            <div id="nav__deco">
+
+            </div>
+            <div id="nav__option">
+                <div id="nav__menu">
+                    <a href="#"><img src="./img/btn_top_01.png" alt=""></a>
+                    <a href="#"><img src="./img/btn_top_03.png" alt=""></a>
+                    <a href="#"><img src="./img/btn_top_06.png" alt=""></a>
+                    <a href="#"><img src="./img/btn_top_07_end.png" alt=""></a>
+                </div>
+                <div id="nav_search">
+                    <input type="text">
+                    <input type="button">
+                </div>
+            </div>
+        </nav>
+        <div id="search__content">
+            <div id="search__box">
+                <form id="search__input" action="#" onsubmit="return false;search();">
+                    <input type="hidden" name="page" value="1"/>
+                    <input type="hidden" name="type" value="PLACE"/>
+                    <input type="hidden" name="size" value="1000"/>
+                    <input type="hidden" name="request" value="search"/>
+                    <input type="hidden" name="apiKey" value="6584E7E2-4457-3DD1-BCC8-2115736D8650"/>
+                    <input type="text" id="search" name="query" value="돈화문"/>
+                    <a href="javascript:search()"><img src="./img/bt_search1.gif" alt=""></a>
+                    <input type="submit" style="display: none"></input>
+                </form>
+            </div>
+            <div id="result__box">
+                <div id="title"><img src="./img/tit_result.gif" alt=""></div>
+                <ul id="result__list">
+                </ul>
+                <!--<div id="pagenation">-->
+                    <!--<span>1</span>-->
+                <!--</div>-->
+            </div>
+        </div>
+        <div id="map__cover">
+            <div id="map__header">
+                <div id="map__header__left">
+                    서울특별시 > 종로구 > 와룡동
+                </div>
+                <div id="map__header__right">
+                    <img id="reload" src="./img/barmenu_off_01.png">
+                    <img id="zoomin" src="./img/barmenu_off_02.png">
+                    <img id="zoomout" src="./img/barmenu_off_03.png">
+                    <img id="distance" src="./img/barmenu_off_05.png">
+                    <img id="area" src="./img/barmenu_off_06.png">
+                </div>
+            </div>
+            <div id="map__content">
+                <div id="wait__div">
+                    <span id="big">지도를 로딩중 입니다.</span><br>
+                    <span id="small">잠시만 기다려 주세요.</span>
+                </div>
+            </div>
+        </div>
+        <div id="footer"></div>
+    </div>
+</div>
+
+<script type="text/javascript"
+        src="http://map.vworld.kr/js/vworldMapInit.js.do?version=2.0&apiKey=6584E7E2-4457-3DD1-BCC8-2115736D8650"></script>
+<script src="./js/jquery-2.2.3.js"></script>
+<script src="./js/ol.js"></script>
+<script type="text/javascript">
+    var cnt = 0;
+    var features = [];
+    var wmts = new ol.layer.Tile({
+        source: new ol.source.XYZ({
+            url: 'http://api.vworld.kr/req/wmts/1.0.0/6584E7E2-4457-3DD1-BCC8-2115736D8650/Base/{z}/{y}/{x}.png'
+        })
+    });
+    var map = new ol.Map({
+        target: 'map__content',
+        layers: [wmts],
+        view: new ol.View({
+            center: ol.proj.transform([126.9380517322744, 37.16792263658907], 'EPSG:4326', 'EPSG:900913'),
+            zoom: 7
+        })
+    });
+
+    $("#search__input").submit(function(e){
+        e.preventDefault();
+       search();
+    });
+
+    var search = function() {
+        $.ajax({
+            type: "get",
+            url: "http://api.vworld.kr/req/search",
+            data: $('#search__input').serialize(),
+            dataType: 'jsonp',
+            async: false,
+            success: function (data) {
+                if(data.response.status === "NOT_FOUND"){
+                    alert(data.response.status);
+                    map.getView().setCenter(ol.proj.transform([126.9380517322744, 37.16792263658907], 'EPSG:4326', 'EPSG:900913'));
+                    map.getView().setZoom(7);
+                    $("#result__list").html("");
+                    return 0;
+                }
+                let items = data.response.result.items;
+                for (var i in items) {
+                    if(i == 0){
+                        move(items[0].point.x * 1, items[0].point.y * 1);
+                        features = [];
+                    }
+                    if (items[i].category.indexOf("관광지") !== -1 || items[i].category.indexOf("유적지") !== -1) {
+                        features[cnt] = new ol.Feature({
+                            geometry: new ol.geom.Point(ol.proj.transform([items[i].point.x * 1, items[i].point.y * 1], 'EPSG:4326', "EPSG:900913")),
+                            id: items[i].id,
+                            title: items[i].title,
+                            parcel: items[i].address.parcel,
+                            road: items[i].address.road,
+                            category: items[i].category,
+                            point: items[i].point
+                        });
+
+                        var iconStyle = new ol.style.Style({
+                            image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
+                                anchor: [0.5, 10],
+                                anchorXUnits: 'fraction',
+                                anchorYUnits: 'pixels',
+                                src: './img/point_01.png'
+                            }))
+                        });
+                        features[cnt].setStyle(iconStyle);
+
+                        var overlayElement = document.createElement("div"); // 오버레이 팝업설정
+
+                        .
+                        
+
+                        var overlayInfo = new ol.Overlay({
+                            id: features[cnt].get("id"),
+                            element: overlayElement,
+                            offset: [0, -120],
+                            position: ol.proj.transform([features[cnt].get("point").x * 1,
+                                features[cnt].get("point").y * 1
+                            ], 'EPSG:4326', "EPSG:900913")
+                        });
+
+                        map.addOverlay(overlayInfo);
+                        cnt++;
+                    }
+                }
+                var vectorSource = new ol.source.Vector({
+                    features: features
+                });
+
+                var vectorLayer = new ol.layer.Vector({
+                    source: vectorSource
+                });
+
+                vectorLayer.set("vectorLayer", "search_vector");
+
+                map.getLayers().forEach(function (layer) {
+                    if (layer.get("vectorLayer") == "search_vector") {
+                        map.removeLayer(layer);
+                    }
+                });
+
+                map.addLayer(vectorLayer);
+                createLeftListFunc();
+            }, error: function (xhr, stat, err) {
+                console.log(err);
+            }
+        });
+        $("#search").val("");
+        cnt = 0;
+    };
+
+    var move = function (x, y) {
+        map.getView().setCenter(ol.proj.transform([x, y], 'EPSG:4326', "EPSG:900913"));
+        map.getView().setZoom(19);
+    };
+    
+    var createLeftListFunc = function () {
+        let html = "";
+        features.forEach(function (e) {
+            html += `<li class="result__el" data-x="${e.get("point").x}" data-y="${e.get("point").y}" onclick="clickNameOfCaltural(this)">
+                        <div class="name">${e.get("title")}</div>
+                        <div class="description">
+                            <div class="des__img">
+                                <img src="./img/1613328.jpg" alt="">
+                            </div>
+                            <div class="des__content">
+                                <p>주소 : ${e.get("road")}</p>
+                            </div>
+                        </div>
+                    </li>`
+        });
+        $("#result__list").html(html)
+    };
+
+    var clickNameOfCaltural = function(el){
+        let x = $(el).data("x");
+        let y = $(el).data("y");
+        move(x, y);
+    }
+</script>
+</body>
+</html>
